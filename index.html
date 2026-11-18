@@ -309,6 +309,104 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--line-strong);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:13.5px;z-index:70;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}.stars svg{transform:none;opacity:1}}
+
+/* ===== one-screen layout: every screen fits the window, nothing needs scrolling ===== */
+html,body{height:100%}
+body{overflow:hidden;padding-block:8px}
+.app{height:100%;min-height:0;gap:8px}
+.app>*{flex:none}
+@media (orientation: landscape) and (min-width: 600px){.app{max-width:560px}}
+/* the board takes whatever height is left and stays square */
+.board-wrap{flex:1 1 0;min-height:0;container-type:size;display:grid;place-items:center}
+.board{width:min(100cqw,100cqh);height:min(100cqw,100cqh);aspect-ratio:auto;max-width:none}
+.status{flex-wrap:nowrap;overflow:hidden;gap:6px}
+.chip{flex:none}
+.hint-line{font-size:12px;line-height:1.35}
+#gameRules .rule-card{flex-direction:row;justify-content:center;gap:6px;padding:4px 6px}
+#gameRules .rule-card svg{width:34px;height:34px;flex:none}
+#gameRules .rule-card span{text-align:left}
+@media (max-width:430px){#streak{display:none!important}.mini{display:none}h1{font-size:24px}.ibtn{width:38px;height:38px}.icons{gap:5px}#gameRules .rule-card svg{width:30px;height:30px}#gameRules .rule-card{gap:4px;padding:4px}}
+@media (max-height:600px){.hint-line{display:none}}
+/* intro: sizes follow the window height */
+.intro{height:100%;justify-content:space-evenly;gap:clamp(4px,1.1dvh,12px);padding-block:0;overflow:hidden}
+.intro>*{flex:none}
+.peek img{width:clamp(20px,3.4dvh,30px);height:clamp(20px,3.4dvh,30px)}
+.intro-title{font-size:clamp(30px,6dvh,46px)}
+.intro-sub{font-size:clamp(12px,1.9dvh,14px)}
+.intro-board{width:min(210px,23dvh,62vw)}
+.intro .primary{padding-block:clamp(7px,1.5dvh,13px)}
+.intro .secondary{padding-block:clamp(7px,1.3dvh,11px)}
+.intro-how{gap:6px}
+.intro-how .rule-card svg{width:clamp(34px,5.6dvh,58px);height:clamp(34px,5.6dvh,58px)}
+@media (max-height:780px){.intro-how .note{display:none}}
+/* sheets: never taller than the window; long ones use tabs */
+.sheet{max-height:calc(100dvh - 10px);gap:12px;padding-block:14px calc(16px + env(safe-area-inset-bottom,0px))}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:var(--board);border:1px solid var(--line);border-radius:12px;padding:3px}
+.tab{border:0;background:none;border-radius:9px;padding:7px 4px;cursor:pointer;font-size:14px;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--ink);font-weight:700}
+.pane{display:flex;flex-direction:column;gap:10px}
+.set-row{padding:3px 0}
+th,td{padding:5px 6px}
+.lvnum{font-size:34px}
+.fact{padding:6px 4px}
+.fact b{font-size:20px}
+.badges{grid-template-columns:repeat(4,1fr);gap:8px 4px}
+.medal{width:46px;height:46px;padding:3px}
+.badge strong{font-size:12.5px}
+.badge span{font-size:10.5px}
+.fgrid{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:6px}
+.fbtn{padding:6px 2px 4px;font-size:12px}
+.fbtn img,.fbtn .dice{width:42px;height:42px}
+.shop-grid{grid-template-columns:repeat(4,1fr);gap:6px}
+.item{padding:6px 3px;gap:2px}
+.item img{width:44px;height:44px}
+.item b{font-size:13.5px}
+.item .hint-ic{height:44px}
+.item .hint-ic svg{width:28px;height:28px}
+.buy{font-size:12.5px;padding:5px 2px}
+.purse{padding:8px 12px}
+.purse b{font-size:24px}
+.purse-ic svg.acorn{width:30px;height:30px}
+.seg label{padding:7px 4px}
+.daily{padding:10px 12px}
+.dice-sm{display:inline-grid;place-items:center;width:28px;height:28px;font-family:var(--font-display);color:var(--muted)}
+.win{gap:10px}
+.stars svg{width:40px;height:40px}
+@media (max-height:700px){.medal{width:40px;height:40px}.badges{gap:6px 4px}.sheet{gap:10px}}
+/* phones held sideways (short and wide): board on the left, everything else on the right */
+@media (orientation: landscape) and (max-height: 520px){
+  body{padding-block:6px}
+  .app{max-width:none;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,330px);grid-auto-rows:min-content;grid-auto-flow:row dense;column-gap:18px;row-gap:8px;align-content:start}
+  .app>*{grid-column:2}
+  .app>.board-wrap{grid-column:1;grid-row:1 / span 12;height:calc(100dvh - 12px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+  .hint-line{display:block}
+  .intro{max-width:none;display:grid;grid-template-columns:1fr 1fr;grid-auto-flow:row dense;column-gap:24px;row-gap:6px;align-content:center;justify-items:center}
+  .intro>*{grid-column:2}
+  .intro>.peek,.intro>.intro-title,.intro>.intro-sub,.intro>.intro-board{grid-column:1}
+  .intro-board{width:min(200px,42dvh)}
+  .intro-how h3{display:none}
+  .wrap{align-items:center}
+  .sheet{width:min(860px,calc(100% - 20px));border-radius:18px;gap:8px;padding-block:10px 12px}
+  .badges{grid-template-columns:repeat(8,1fr)}
+  .badge span{display:none}
+  .medal{width:38px;height:38px}
+  .shop-grid{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}
+  .item img,.item .hint-ic{width:34px;height:34px}
+  .purse small{display:none}
+  .sheet h3{margin-bottom:4px}
+  .lvnum{font-size:28px}
+  #recMain{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-items:start}
+  #recMain>div:last-child{grid-column:2;grid-row:1 / span 2}
+  #setMain{display:grid;grid-template-columns:1fr 1fr;column-gap:24px}
+  #sheetShop .sheet{display:grid;grid-template-columns:1fr 1.5fr;column-gap:16px;align-items:start}
+  #sheetShop .sheet-head{grid-column:1 / -1}
+  #sheetShop .purse{grid-column:1}
+  #sheetShop .sheet>div:nth-of-type(3){grid-column:2;grid-row:2 / span 2}
+  #sheetShop .sheet>div:nth-of-type(4){grid-column:1}
+  #sheetNew .sheet{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;align-items:start}
+  #sheetNew .sheet-head{grid-column:1 / -1}
+  #sheetNew .daily{grid-column:1}#sheetNew .sheet>div:nth-of-type(3){grid-column:2;grid-row:2 / span 2}
+}
 </style>
 </head>
 <body>
@@ -389,11 +487,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <h3>판 크기</h3>
       <div class="seg" style="--k:3" id="segSize"></div>
     </div>
-    <div>
-      <h3>놓을 친구</h3>
-      <div class="friends" id="friendPick"></div>
-    </div>
-    <p class="rule">가로줄마다, 세로줄마다, 같은 색 구역마다 친구가 딱 한 마리씩 들어가요. 친구끼리는 옆이나 대각선으로 붙어 앉을 수 없어요. 모든 판은 답이 하나뿐이에요.</p>
+    <div class="set-row"><h3 style="margin:0">놓을 친구</h3><button class="friend-now" id="newFriend" type="button"></button></div>
+    <p class="rule">모든 판은 답이 하나뿐이고, 추리만으로 풀 수 있어요.</p>
     <button class="primary" id="btnStart" type="button">이 설정으로 시작</button>
   </div>
 </div>
@@ -402,15 +497,18 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <div class="wrap" id="sheetRec" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hRec">
     <div class="sheet-head"><h2 id="hRec">나의 기록</h2><button class="close" type="button" data-close>닫기</button></div>
-    <div class="lvbox"><div class="lvnum num" id="recLv">1</div><div id="recLvTxt">레벨</div><div class="bar"><i id="recBar"></i></div></div>
-    <div class="facts">
-      <div class="fact"><b id="fCleared">0</b><span>완성한 판</span></div>
-      <div class="fact"><b id="fStreak">0</b><span>연속 일수</span></div>
-      <div class="fact"><b id="fPerfect">0</b><span>완벽한 판</span></div>
-      <div class="fact"><b id="fSmart">0</b><span>명추리</span></div>
+    <div class="tabs" role="tablist"><button class="tab" type="button" role="tab" data-tab="recMain" aria-selected="true">기록</button><button class="tab" type="button" role="tab" data-tab="recBadges" aria-selected="false">배지</button></div>
+    <div class="pane" id="recMain">
+      <div class="lvbox"><div class="lvnum num" id="recLv">1</div><div id="recLvTxt">레벨</div><div class="bar"><i id="recBar"></i></div></div>
+      <div class="facts">
+        <div class="fact"><b id="fCleared">0</b><span>완성한 판</span></div>
+        <div class="fact"><b id="fStreak">0</b><span>연속 일수</span></div>
+        <div class="fact"><b id="fPerfect">0</b><span>완벽한 판</span></div>
+        <div class="fact"><b id="fSmart">0</b><span>명추리</span></div>
+      </div>
+      <div><h3>크기별 기록</h3><div class="tbl-wrap"><table id="recTable"></table></div></div>
     </div>
-    <div><h3>크기별 기록</h3><div class="tbl-wrap"><table id="recTable"></table></div></div>
-    <div><h3>배지 <span class="note" id="badgeCount"></span></h3><div class="badges" id="badgeGrid"></div></div>
+    <div class="pane" id="recBadges" hidden><p class="note" id="badgeCount"></p><div class="badges" id="badgeGrid"></div></div>
   </div>
 </div>
 
@@ -418,6 +516,8 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <div class="wrap" id="sheetSet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hSet">
     <div class="sheet-head"><h2 id="hSet">설정</h2><button class="close" type="button" data-close>닫기</button></div>
+    <div class="tabs" role="tablist"><button class="tab" type="button" role="tab" data-tab="setMain" aria-selected="true">소리·게임</button><button class="tab" type="button" role="tab" data-tab="setChars" aria-selected="false">캐릭터</button></div>
+    <div class="pane" id="setMain">
     <div>
       <div class="set-row"><span>배경음악 (은은한 피아노)</span><span class="switch"><input type="checkbox" id="setMusic" aria-label="배경음악"><span></span></span></div>
       <div class="set-row"><label for="setVol" style="white-space:nowrap">음악 크기</label><input type="range" id="setVol" min="0" max="1" step="0.05"></div>
@@ -427,9 +527,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div>
       <h3>이 판</h3>
       <button class="secondary set-restart" id="setRestart" type="button">이 판 처음부터 다시 하기</button>    </div>
-    <div>
-      <h3>캐릭터 고르기</h3>
-      <p class="note" style="margin-bottom:10px">누르면 지금 판에 바로 앉아요.</p>
+    </div>
+    <div class="pane" id="setChars" hidden>
+      <p class="note" style="margin-bottom:8px">누르면 지금 판에 바로 앉아요.</p>
       <div class="fgrid" id="charSlots"></div>
     </div>
   </div>
@@ -952,7 +1052,7 @@ function friendButtonsHTML(){
     :`<button class="fbtn locked" type="button" data-shop="1" aria-label="${a.name}, 상점에서 도토리 ${a.price}개"><img src="${charSrc(i)}" alt=""><span>${ACORN_SVG} ${a.price}</span></button>`).join('')+
     `<button class="fbtn" type="button" data-f="rand" aria-pressed="${cur==='rand'}"><span class="dice" aria-hidden="true">?</span><span>판마다 무작위</span></button>`;
 }
-function openFriend(){$('#friendGrid').innerHTML=friendButtonsHTML();open('sheetFriend')}
+function openFriend(){$('#friendGrid').innerHTML=friendButtonsHTML();const back=friendReturn;open('sheetFriend');friendReturn=back}
 // f: animal index (as text) or 'rand'. closeSheet=false keeps the settings sheet open and just updates its buttons.
 function chooseFriend(f,closeSheet){
   settings.friend=f==='rand'?'rand':+f;saveSettings();
@@ -963,7 +1063,7 @@ function chooseFriend(f,closeSheet){
 }
 // Korean particle 로/으로: no final consonant or a final ㄹ takes 로
 function withRo(w){const c=w.charCodeAt(w.length-1)-0xAC00;const j=c>=0&&c<11172?c%28:0;return w+(j===0||j===8?'로':'으로')}
-$('#friendGrid').addEventListener('click',e=>{const b=e.target.closest('.fbtn');if(!b)return;if(b.dataset.shop){openShop();return}chooseFriend(b.dataset.f,true)});
+$('#friendGrid').addEventListener('click',e=>{const b=e.target.closest('.fbtn');if(!b)return;if(b.dataset.shop){friendReturn=null;openShop();return}chooseFriend(b.dataset.f,true);if(friendReturn==='new'){friendReturn=null;openNew()}});
 
 /* ---------- acorn shop ---------- */
 const ACORN_SVG='<svg class="acorn" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.2V2.2" stroke="#6B4420" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M6.3 10.2h11.4c0 6-2.9 10.6-5.7 10.6S6.3 16.2 6.3 10.2z" fill="#C98A4B"/><path d="M4.6 10.4c0-3.6 3.3-6.2 7.4-6.2s7.4 2.6 7.4 6.2z" fill="#7A4A22"/></svg>';
@@ -1385,7 +1485,8 @@ function showWin(r){
   $('#wBar').style.width='0';
   $('#wLvUp').hidden=!r.levelUp;$('#wLvUp').textContent=`레벨 ${L.level} 달성!`+(r.hintGain?` 힌트 +${r.hintGain}개를 받았어요 (남은 힌트 ${hintsLeft()}개)`:'');
   $('#wRecord').hidden=!r.record;
-  $('#wBadges').innerHTML=r.fresh.map(b=>badgeHTML(b,true)).join('');
+  // at most three new badges on the card so it always fits; the rest are listed in 기록 → 배지
+  $('#wBadges').innerHTML=r.fresh.slice(0,3).map(b=>badgeHTML(b,true)).join('')+(r.fresh.length>3?`<p class="note" style="width:100%;margin:0">외 ${r.fresh.length-3}개 더 · 기록 → 배지에서 볼 수 있어요</p>`:'');
   open('sheetWin');
   requestAnimationFrame(()=>requestAnimationFrame(()=>{$('#wBar').style.width=Math.round(L.cur/L.span*100)+'%'}));
   confetti();
@@ -1412,12 +1513,12 @@ const anyOpen=()=>Array.from(document.querySelectorAll('.wrap')).some(w=>!w.hidd
 document.querySelectorAll('.wrap').forEach(w=>{
   w.addEventListener('click',e=>{if(w.id==='sheetOver'||w.id==='sheetTut')return;if(e.target===w||e.target.hasAttribute('data-close'))closeAll()});
 });
+let sizeDraft=null,friendReturn=null; // keep the chosen size while the player hops to the friend picker and back
 function openNew(){
-  const cur=G?G.n:settings.size;
+  const cur=sizeDraft||(G&&G.tut==null?G.n:settings.size);sizeDraft=null;
   $('#segSize').innerHTML=SIZES.map(n=>`<input type="radio" name="size" id="sz${n}" value="${n}"${n===cur?' checked':''}><label for="sz${n}"><b>${n}×${n}</b><span>${SIZE_LABEL[n]}</span></label>`).join('');
-  const f=String(settings.friend);
-  $('#friendPick').innerHTML=`<input type="radio" name="friend" id="fr-rand" value="rand"${f==='rand'?' checked':''}><label for="fr-rand">무작위</label>`+
-    ANIMALS.map((a,i)=>`<input type="radio" name="friend" id="fr${i}" value="${i}"${f===String(i)?' checked':''}><label for="fr${i}" title="${a.name}"><img src="${charSrc(i)}" alt="${a.name}"></label>`).join('');
+  const cf=chosenFriend();
+  $('#newFriend').innerHTML=cf!=null?`<img src="${charSrc(cf)}" alt="">${ANIMALS[cf].name} <span>바꾸기</span>`:`<span class="dice-sm" aria-hidden="true">?</span>판마다 무작위 <span>바꾸기</span>`;
   const done=prog.daily[dayKey()];
   $('#dailyInfo').textContent=done?`오늘 완성 · 별 ${done}개 · 다시 풀 수 있어요`:'8×8 · 날마다 바뀌어요 · 첫 완성 보너스 +30';
   $('#btnDaily').textContent=done?'다시 풀기':'풀기';
@@ -1481,9 +1582,12 @@ $('#btnRec').addEventListener('click',openRec);
 $('#btnSet').addEventListener('click',openSet);
 $('#btnStart').addEventListener('click',()=>{
   const n=+(document.querySelector('#segSize input:checked')||{value:6}).value;
-  const f=(document.querySelector('#friendPick input:checked')||{value:'rand'}).value;
-  settings.size=n;settings.friend=f;saveSettings();startNew(n,f,false);
+  settings.size=n;saveSettings();startNew(n,settings.friend,false);
 });
+$('#newFriend').addEventListener('click',()=>{sizeDraft=+(document.querySelector('#segSize input:checked')||{value:6}).value;friendReturn='new';openFriend()});
+// tabs inside sheets
+document.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(!t)return;
+  t.parentElement.querySelectorAll('[data-tab]').forEach(b=>{const on=b===t;b.setAttribute('aria-selected',String(on));document.getElementById(b.dataset.tab).hidden=!on})});
 $('#btnDaily').addEventListener('click',()=>startNew(8,null,true));
 $('#btnHome').addEventListener('click',showIntro);
 $('#introPlay').addEventListener('click',()=>{
@@ -1492,10 +1596,10 @@ $('#introPlay').addEventListener('click',()=>{
   if(!G||G.done||G.over)startNew(settings.size||6,settings.friend,false);else showGame();
 });
 $('#introTut').addEventListener('click',()=>startTutorial(0));
-$('#introFriend').addEventListener('click',openFriend);
+$('#introFriend').addEventListener('click',()=>{friendReturn=null;openFriend()});
 $('#introShop').addEventListener('click',openShop);
 $('#acornChip').addEventListener('click',openShop);
-$('#mode').addEventListener('click',openFriend);
+$('#mode').addEventListener('click',()=>{friendReturn=null;openFriend()});
 $('#coachSkip').addEventListener('click',skipTutorial);
 $('#tutNext').addEventListener('click',()=>{const k=G?G.tut:0;if(k!=null&&k<TUT.length-1)startTutorial(k+1);else startNew(settings.size||6,settings.friend,false)});
 $('#introNew').addEventListener('click',openNew);
