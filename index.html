@@ -127,6 +127,27 @@ svg.i{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-l
 .hint-line{font-size:12.5px;color:var(--muted);text-align:center;margin:0}
 @media (hover:hover){.tool:hover,.ibtn:hover{border-color:var(--accent)}}
 .home{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;text-align:left;cursor:pointer;display:block;max-width:100%}
+/* acorn shop */
+svg.acorn{width:16px;height:16px;vertical-align:-3px;flex:none}
+.acorn-chip{gap:4px}
+.purse{display:flex;align-items:center;gap:12px;background:var(--board);border:1px solid var(--line);border-radius:14px;padding:10px 14px;font-size:15px}
+.purse b{font-family:var(--font-display);font-weight:400;font-size:28px;color:var(--ink)}
+.purse small{display:block;color:var(--muted);font-size:12px}
+.purse-ic svg.acorn{width:36px;height:36px}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(98px,1fr));gap:8px}
+.item{background:var(--board);border:1px solid var(--line);border-radius:14px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.item img{width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 1px 1.5px rgba(20,30,25,.25))}
+.item:not(.have) img{filter:grayscale(.15) brightness(.97)}
+.item b{font-weight:400;font-family:var(--font-display);font-size:15px}
+.item .hint-ic{display:flex;align-items:center;gap:2px;height:58px;font-family:var(--font-display);font-size:20px;color:var(--accent)}
+.item .hint-ic svg{width:34px;height:34px}
+.buy{display:inline-flex;align-items:center;justify-content:center;gap:4px;width:100%;border:1.5px solid var(--accent);background:var(--accent-soft);color:var(--ink);border-radius:10px;padding:6px 4px;cursor:pointer;font-size:13.5px;font-variant-numeric:tabular-nums}
+.buy[data-pick]{border-color:var(--line);background:var(--surface)}
+.buy[aria-pressed="true"]{border-color:var(--ok);color:var(--ok)}
+.buy.armed{background:var(--accent);color:var(--accent-ink)}
+.fbtn.locked img{filter:grayscale(1) opacity(.45)}
+.fbtn.locked span{display:inline-flex;align-items:center;gap:3px;color:var(--muted)}
+@media (max-width:400px){.status{gap:5px 6px}.chip{padding:3px 8px}}
 /* friend picker */
 .chip-btn{cursor:pointer;font:inherit}
 .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:8px}
@@ -301,7 +322,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <button class="secondary" id="introNew" type="button">새 판 고르기</button>
     <button class="secondary" id="introDaily" type="button">오늘의 판</button>
   </div>
-  <div class="intro-links"><button id="introTut" type="button">튜토리얼</button><button id="introRec" type="button">기록·배지</button><button id="introSet" type="button">설정</button></div>
+  <div class="intro-links"><button id="introShop" type="button">상점</button><button id="introTut" type="button">튜토리얼</button><button id="introRec" type="button">기록·배지</button><button id="introSet" type="button">설정</button></div>
   <div class="intro-how">
     <h3>놀이 방법</h3>
     <div class="rules" id="introRules"></div>
@@ -326,6 +347,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <span class="chip hearts" id="hearts"></span>
     <span class="spacer"></span>
     <span class="chip num" id="streak" hidden></span>
+    <button class="chip chip-btn acorn-chip" id="acornChip" type="button" aria-label="상점 열기"></button>
     <span class="chip num" id="lvchip"><span id="lvtxt">Lv.1</span><span class="mini"><i id="lvmini"></i></span></span>
   </div>
 
@@ -416,6 +438,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     </dl>
     <p class="xpline">경험치 <em id="wXp">+0</em></p>
     <p class="note" id="wBonus" hidden></p>
+    <p class="note" id="wAcorn"></p>
     <div class="bar"><i id="wBar"></i></div>
     <p class="note" id="wLv"></p>
     <p class="lvup" id="wLvUp" hidden></p>
@@ -451,6 +474,16 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     </div>
     <p id="hintText"></p>
     <div class="row"><button class="secondary" id="hintClose" type="button">닫기</button><button class="primary" id="hintApply" type="button">적용하기</button></div>
+  </div>
+</div>
+
+<!-- acorn shop -->
+<div class="wrap" id="sheetShop" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="hShop">
+    <div class="sheet-head"><h2 id="hShop">숲속 상점</h2><button class="close" type="button" data-close>닫기</button></div>
+    <div class="purse"><span class="purse-ic" aria-hidden="true"></span><div><b class="num" id="shopAcorns">0</b> 도토리<small>판을 깨면 얻은 점수만큼 도토리가 쌓여요</small></div></div>
+    <div><h3>새 친구</h3><div class="shop-grid" id="shopFriends"></div></div>
+    <div><h3>힌트 <span class="note" id="shopHintsLeft"></span></h3><div class="shop-grid" id="shopHints"></div></div>
   </div>
 </div>
 
@@ -512,6 +545,20 @@ const ANIMALS=[
   {name:'햄스터',bg:'#F6E2D0',body:`<circle cx="30" cy="33" r="8" fill="#DDA273"/><circle cx="30" cy="33" r="4" fill="#F4B9B0"/><circle cx="70" cy="33" r="8" fill="#DDA273"/><circle cx="70" cy="33" r="4" fill="#F4B9B0"/><ellipse cx="50" cy="58" rx="32" ry="27" fill="#EFBC88"/><ellipse cx="50" cy="69" rx="22" ry="15" fill="#FFF4E6"/>${eye(40,52,3.8)}${eye(60,52,3.8)}<ellipse cx="50" cy="60" rx="2.6" ry="2" fill="#E07C8E"/><ellipse cx="31" cy="63" rx="8" ry="6" fill="#F28B8B" opacity=".45"/><ellipse cx="69" cy="63" rx="8" ry="6" fill="#F28B8B" opacity=".45"/>`},
   {name:'코알라',bg:'#DFE3EA',body:`<circle cx="24" cy="42" r="15" fill="#9AA4B1"/><circle cx="24" cy="42" r="8" fill="#ECDCE2"/><circle cx="76" cy="42" r="15" fill="#9AA4B1"/><circle cx="76" cy="42" r="8" fill="#ECDCE2"/><circle cx="50" cy="57" r="26" fill="#AAB4C0"/>${eye(39,53)}${eye(61,53)}<ellipse cx="50" cy="62" rx="7" ry="9" fill="#3A3F48"/>${blush(34,67)}${blush(66,67)}`}
 ];
+/* shop friends (bought with acorns) */
+const spikes=(cx,cy,r1,r2,k,fill)=>{const p=[];for(let j=0;j<k*2;j++){const a=Math.PI*j/k-Math.PI/2,r=j%2?r2:r1;p.push((cx+Math.cos(a)*r).toFixed(1)+','+(cy+Math.sin(a)*r).toFixed(1))}return `<polygon points="${p.join(' ')}" fill="${fill}"/>`};
+const eyeOnDark=(x,y)=>`<circle cx="${x}" cy="${y}" r="4.3" fill="#FFFFFF"/><circle cx="${x+.4}" cy="${y+.4}" r="3" fill="#17181C"/><circle cx="${x+1.4}" cy="${y-.9}" r="1.1" fill="#FFFFFF"/>`;
+ANIMALS.push(
+  {name:'다람쥐',price:120,body:`<path d="M64 78 C96 74 99 34 77 21 C70 18 63 24 69 30 C82 42 80 60 61 66 Z" fill="#B5703A"/><path d="M71 31 C82 43 79 59 63 65" fill="none" stroke="#DCA066" stroke-width="5" stroke-linecap="round" opacity=".55"/><path d="M29 37 L34 15 L46 33 Z" fill="#C98448"/><path d="M71 37 L66 15 L54 33 Z" fill="#C98448"/><path d="M33 32 L35 22 L41 32 Z" fill="#F2C9A8"/><path d="M67 32 L65 22 L59 32 Z" fill="#F2C9A8"/><ellipse cx="50" cy="57" rx="26" ry="24" fill="#D9955A"/><ellipse cx="50" cy="66" rx="14" ry="10" fill="#F7E3C8"/>${eye(41,53)}${eye(59,53)}<ellipse cx="50" cy="61" rx="3.2" ry="2.3" fill="#4A2C1A"/><rect x="47.5" y="65.5" width="5" height="4.5" rx="1" fill="#FFFFFF" stroke="#E2D3C2" stroke-width=".8"/>${blush(32,63)}${blush(68,63)}`},
+  {name:'아기돼지',price:120,body:`<path d="M25 41 L29 21 L44 33 Z" fill="#F29BAE"/><path d="M75 41 L71 21 L56 33 Z" fill="#F29BAE"/><circle cx="50" cy="56" r="28" fill="#F8B9C5"/><ellipse cx="50" cy="64" rx="12" ry="8.5" fill="#F08DA2"/><ellipse cx="45.5" cy="64" rx="2" ry="3" fill="#B85A70"/><ellipse cx="54.5" cy="64" rx="2" ry="3" fill="#B85A70"/>${eye(40,50)}${eye(60,50)}${blush(29,62)}${blush(71,62)}`},
+  {name:'수달',price:180,body:`<circle cx="27" cy="38" r="7" fill="#7A5A42"/><circle cx="73" cy="38" r="7" fill="#7A5A42"/><ellipse cx="50" cy="56" rx="28" ry="26" fill="#94704F"/><ellipse cx="50" cy="66" rx="17" ry="12" fill="#EAD7BF"/>${eye(40,51)}${eye(60,51)}<ellipse cx="50" cy="61" rx="5.5" ry="3.8" fill="#2E2119"/><path d="M46 67 q4 3.5 8 0" fill="none" stroke="#2E2119" stroke-width="1.8" stroke-linecap="round"/><circle cx="41" cy="66" r="1" fill="#8C7056"/><circle cx="43.5" cy="69.5" r="1" fill="#8C7056"/><circle cx="59" cy="66" r="1" fill="#8C7056"/><circle cx="56.5" cy="69.5" r="1" fill="#8C7056"/>${blush(31,62)}${blush(69,62)}`},
+  {name:'너구리',price:180,body:`<path d="M26 41 L29 20 L45 33 Z" fill="#7C6450"/><path d="M74 41 L71 20 L55 33 Z" fill="#7C6450"/><path d="M30 36 L31 26 L39 33 Z" fill="#E9DCCB"/><path d="M70 36 L69 26 L61 33 Z" fill="#E9DCCB"/><ellipse cx="50" cy="56" rx="29" ry="26" fill="#A88B6E"/><ellipse cx="50" cy="67" rx="17" ry="11" fill="#F2E7DA"/><ellipse cx="38" cy="53" rx="11" ry="8" fill="#4A3B32" transform="rotate(-12 38 53)"/><ellipse cx="62" cy="53" rx="11" ry="8" fill="#4A3B32" transform="rotate(12 62 53)"/>${eyeOnDark(39,53)}${eyeOnDark(61,53)}<ellipse cx="50" cy="62" rx="4" ry="3" fill="#2E2119"/>${smile(66)}`},
+  {name:'고슴도치',price:240,body:`${spikes(50,50,40,29,16,'#7A5A44')}<circle cx="50" cy="50" r="29" fill="#8C6A52"/><ellipse cx="50" cy="61" rx="22" ry="20" fill="#F1D9BC"/><circle cx="34" cy="46" r="5" fill="#E8C7A4"/><circle cx="66" cy="46" r="5" fill="#E8C7A4"/>${eye(42,58)}${eye(58,58)}<circle cx="50" cy="66" r="3.4" fill="#3A2A20"/>${blush(35,66)}${blush(65,66)}`},
+  {name:'아기양',price:240,body:`<circle cx="50" cy="55" r="29" fill="#FFFDF6" stroke="#E9E1D0" stroke-width="1.2"/><circle cx="50" cy="29" r="11" fill="#FFFDF6" stroke="#E9E1D0" stroke-width="1.2"/><circle cx="33" cy="34" r="10" fill="#FFFDF6" stroke="#E9E1D0" stroke-width="1.2"/><circle cx="67" cy="34" r="10" fill="#FFFDF6" stroke="#E9E1D0" stroke-width="1.2"/><circle cx="25" cy="50" r="9" fill="#FFFDF6" stroke="#E9E1D0" stroke-width="1.2"/><circle cx="75" cy="50" r="9" fill="#FFFDF6" stroke="#E9E1D0" stroke-width="1.2"/><ellipse cx="21" cy="57" rx="10" ry="5.5" fill="#E8CFAF" transform="rotate(20 21 57)"/><ellipse cx="79" cy="57" rx="10" ry="5.5" fill="#E8CFAF" transform="rotate(-20 79 57)"/><ellipse cx="50" cy="61" rx="17" ry="19" fill="#F6E4CC"/><circle cx="44" cy="43" r="6" fill="#FFFDF6"/><circle cx="50" cy="41" r="6.5" fill="#FFFDF6"/><circle cx="56" cy="43" r="6" fill="#FFFDF6"/>${eye(43,59,3.8)}${eye(57,59,3.8)}<path d="M47 67 h6 l-3 3.2z" fill="#C98F7A"/>${blush(38,66)}${blush(62,66)}`},
+  {name:'아기사슴',price:300,body:`<ellipse cx="22" cy="41" rx="13" ry="7" fill="#C48450" transform="rotate(-28 22 41)"/><ellipse cx="22" cy="41" rx="8" ry="3.6" fill="#F3C9B5" transform="rotate(-28 22 41)"/><ellipse cx="78" cy="41" rx="13" ry="7" fill="#C48450" transform="rotate(28 78 41)"/><ellipse cx="78" cy="41" rx="8" ry="3.6" fill="#F3C9B5" transform="rotate(28 78 41)"/><ellipse cx="50" cy="56" rx="25" ry="27" fill="#CF8F58"/><circle cx="44" cy="39" r="2.2" fill="#F6E6D2"/><circle cx="56" cy="37" r="2" fill="#F6E6D2"/><circle cx="50" cy="44" r="1.8" fill="#F6E6D2"/><ellipse cx="50" cy="69" rx="12" ry="9" fill="#F3DFC6"/>${eye(41,55,4.6)}${eye(59,55,4.6)}<ellipse cx="50" cy="66" rx="4" ry="2.8" fill="#2E2119"/>${blush(33,64)}${blush(67,64)}`},
+  {name:'부엉이',price:400,body:`<path d="M22 24 L40 36 L28 44 Z" fill="#7A5A41"/><path d="M78 24 L60 36 L72 44 Z" fill="#7A5A41"/><ellipse cx="50" cy="57" rx="30" ry="29" fill="#8E6A4E"/><ellipse cx="50" cy="72" rx="18" ry="12" fill="#E9D3B4"/><path d="M42 71 q2 2 4 0 M48 75 q2 2 4 0 M54 71 q2 2 4 0" stroke="#C9A985" stroke-width="1.4" fill="none" stroke-linecap="round"/><circle cx="38" cy="52" r="12" fill="#F4E6CF"/><circle cx="62" cy="52" r="12" fill="#F4E6CF"/><circle cx="38" cy="52" r="7.5" fill="#F2B33D"/><circle cx="62" cy="52" r="7.5" fill="#F2B33D"/><circle cx="38.5" cy="52.5" r="4.6" fill="#1E1A16"/><circle cx="61.5" cy="52.5" r="4.6" fill="#1E1A16"/><circle cx="40" cy="50.6" r="1.6" fill="#FFFFFF"/><circle cx="63" cy="50.6" r="1.6" fill="#FFFFFF"/><path d="M46 60 L54 60 L50 67 Z" fill="#F08A2C"/>`}
+);
+const BASE_FRIENDS=10;
 const DEFAULT_SRC=ANIMALS.map(a=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${a.body}</svg>`)); // no background circle: the character sits straight on the region colour
 let custom={}; // picture upload was retired: always use the built-in drawings (old saved pictures are left untouched in storage)
 let charVer=0;
@@ -577,11 +624,12 @@ const Puz={
       for(let it=0;it<n*n*6;it++){
         const sols=this.solve(reg,n,3,400000);
         if(!sols)break;
-        if(sols.length===1)return {reg,sol:cols};
+        // accept only boards that are unique AND solvable step by step with the hint rules (no guessing needed)
+        if(sols.length===1&&logicRounds(reg,n)>=0)return {reg,sol:cols};
         const alts=sols.filter(s=>!s.every((c,r)=>c===cols[r]));
-        const alt=alts[Math.floor(rng()*alts.length)];
+        const alt=alts.length?alts[Math.floor(rng()*alts.length)]:null;
         const moves=[];
-        for(let r=0;r<n;r++){
+        if(alt)for(let r=0;r<n;r++){
           if(alt[r]===cols[r])continue;
           const q=r*n+alt[r];
           for(const [dr,dc] of D4){const rr=r+dr,cc=alt[r]+dc;if(rr<0||cc<0||rr>=n||cc>=n)continue;const g=reg[rr*n+cc];if(g!==reg[q])moves.push(q*16+g)}
@@ -603,6 +651,38 @@ const Puz={
   }
 };
 /*GEN-END*/
+
+/* ---------- logic solver: the same rules the hints use ---------- */
+// From the board state (vf = friends, cand = cells still possible) apply one round of
+// forced seats, "region inside one line" claims and "this seat would block a unit" eliminations.
+// Every deduction in a round looks at the board as it was when the round started (a snapshot),
+// so the number of rounds is the real depth of the reasoning, not an artefact of loop order.
+function logicRound(n,reg,vf,cand,units,useBlocks){
+  const N=n*n,rc=i=>[(i/n)|0,i%n];
+  const sees=(a,b)=>{if(a===b)return false;const [r1,c1]=rc(a),[r2,c2]=rc(b);return r1===r2||c1===c2||reg[a]===reg[b]||(Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1)};
+  const open=u=>!u.cells.some(i=>vf[i]),place=new Set(),kill=new Set();
+  for(const u of units){if(!open(u))continue;const s=u.cells.filter(i=>cand[i]);if(s.length===1)place.add(s[0])}
+  for(const u of units){if(!open(u))continue;const s=u.cells.filter(i=>cand[i]);if(s.length<2)continue;
+    for(const t of ['r','c','g']){if(t===u.t)continue;const key=i=>t==='r'?rc(i)[0]:t==='c'?rc(i)[1]:reg[i],k0=key(s[0]);
+      if(!s.every(i=>key(i)===k0))continue;const v=units.find(w=>w.t===t&&w.k===k0);
+      for(const j of v.cells)if(cand[j]&&u.cells.indexOf(j)<0)kill.add(j)}}
+  if(useBlocks)for(let x=0;x<N;x++){if(!cand[x])continue;
+    for(const u of units){if(!open(u)||u.cells.indexOf(x)>=0)continue;const s=u.cells.filter(i=>cand[i]);
+      if(s.length&&s.every(i=>sees(x,i))){kill.add(x);break}}}
+  let changed=false;
+  for(const y of place){if(vf[y])continue;vf[y]=true;cand[y]=false;changed=true;for(let j=0;j<N;j++)if(cand[j]&&sees(y,j))cand[j]=false}
+  for(const j of kill)if(cand[j]){cand[j]=false;changed=true}
+  return changed;
+}
+// Rounds needed to solve an empty board with these rules, or -1 if it gets stuck (would need guessing).
+function logicRounds(reg,n){
+  const N=n*n,units=buildUnits(n,reg),vf=new Array(N).fill(false),cand=new Array(N).fill(true);
+  for(let round=1;round<=4*n;round++){
+    if(!logicRound(n,reg,vf,cand,units,true))return -1;
+    if(vf.filter(Boolean).length===n)return round;
+  }
+  return -1;
+}
 
 /* ---------- region colouring: neighbouring regions get the most different colours ---------- */
 const PAL=['#F29C9C','#F6B26B','#F0DC5A','#9CD67A','#6FCFBF','#7FB8F0','#A79BF0','#E290D6','#C9A27A','#B5C0C8'];
@@ -752,7 +832,9 @@ let settings=Object.assign({music:true,vol:.55,sfx:true,autoX:false,relax:false,
 if(SIZES.indexOf(+settings.size)<0)settings.size=6;
 // Auto-× used to be on by default; switch it off once for everyone (it stays available in settings).
 if(!settings.autoXv2){settings.autoX=false;settings.autoXv2=true;store.set(K.set,settings)}
-let prog=Object.assign({xp:0,cleared:0,perfect:0,streak:0,best:0,last:null,badges:{},stats:{},daily:{},hintsLeft:3},store.get(K.prog,{})||{});
+let prog=Object.assign({xp:0,cleared:0,perfect:0,streak:0,best:0,last:null,badges:{},stats:{},daily:{},hintsLeft:3,acorns:100,owned:[]},store.get(K.prog,{})||{});
+const owns=i=>i<BASE_FRIENDS||(prog.owned||[]).indexOf(i)>=0;
+const ownedFriends=()=>range(ANIMALS.length).filter(owns);
 let G=null,cells=[],busy=false;
 const saveSettings=()=>store.set(K.set,settings);
 const saveProg=()=>store.set(K.prog,prog);
@@ -788,7 +870,7 @@ function makeGame(n,friend,daily){
   for(let k=0;k<50&&!p;k++){p=Puz.generate(5,seed);seed=(seed+1)>>>0}  // practically never needed
   n=p.sol.length;
   if(daily)friend=chosenFriend()!=null?chosenFriend():hashStr('friend-'+dk)%10;
-  else if(friend==='rand'||friend==null)friend=Math.floor(Math.random()*10);
+  else if(friend==='rand'||friend==null){const pool=ownedFriends();friend=pool[Math.floor(Math.random()*pool.length)]}
   return {n,friend:+friend,daily:!!daily,dk,reg:p.reg,sol:p.sol,st:new Array(n*n).fill(0),
           miss:0,hints:0,hinted:[],elapsed:0,done:false,over:false,undo:[]};
 }
@@ -841,12 +923,12 @@ function tutFinish(){
   cells.forEach((el,i)=>{const img=el.querySelector('img:not(.leave)');if(img)img.style.animationDelay=(((i/G.n)|0)+i%G.n)*45+'ms';el.classList.add('wave')});
   setTimeout(()=>cells.forEach(el=>el.classList.remove('wave')),2200);
   let tutHints=0;
-  if(last){const b=levelOf(prog.xp).level;prog.tutorialDone=true;prog.xp+=30;tutHints=grantLevelHints(b);if(!prog.badges.tut){prog.badges.tut=dayKey();badge=true}saveProg();updateHeader()}
+  if(last){const b=levelOf(prog.xp).level;prog.tutorialDone=true;prog.xp+=30;prog.acorns=acorns()+50;tutHints=grantLevelHints(b);if(!prog.badges.tut){prog.badges.tut=dayKey();badge=true}saveProg();updateHeader()}
   updateCoach();
   setTimeout(()=>{
     $('#tutPic').src=charSrc(G.friend);
     $('#hTut').textContent=last?'튜토리얼 완료!':`${k+1}단계 완료!`;
-    $('#tutText').textContent=last?`이제 혼자서도 할 수 있어요. 경험치 +30${tutHints?`과 힌트 +${tutHints}개`:''}을 받았어요. 진짜 판에서는 틀리면 하트가 줄고, 힌트는 ${hintsLeft()}개까지 쓸 수 있어요. 레벨이 오르면 힌트를 더 받아요.`:TUT[k].done;
+    $('#tutText').textContent=last?`이제 혼자서도 할 수 있어요. 경험치 +30, 도토리 +50${tutHints?`, 힌트 +${tutHints}개를`:'을'} 받았어요. 도토리는 상점에서 새 친구나 힌트로 바꿀 수 있어요. 진짜 판에서는 틀리면 하트가 줄고, 힌트는 ${hintsLeft()}개까지 쓸 수 있어요. 레벨이 오르면 힌트를 더 받아요.`:TUT[k].done;
     $('#tutBadge').innerHTML=badge?badgeHTML(BADGES.find(b=>b.id==='tut'),true):'';
     $('#tutNext').textContent=last?'첫 판 시작하기':'다음 단계';
     open('sheetTut');if(last)confetti();
@@ -856,7 +938,9 @@ function tutFinish(){
 const chosenFriend=()=>(settings.friend!=null&&settings.friend!=='rand')?+settings.friend:null;
 function friendButtonsHTML(){
   const cur=String(settings.friend);
-  return ANIMALS.map((a,i)=>`<button class="fbtn" type="button" data-f="${i}" aria-pressed="${cur===String(i)}"><img src="${charSrc(i)}" alt=""><span>${a.name}</span></button>`).join('')+
+  return ANIMALS.map((a,i)=>owns(i)
+    ?`<button class="fbtn" type="button" data-f="${i}" aria-pressed="${cur===String(i)}"><img src="${charSrc(i)}" alt=""><span>${a.name}</span></button>`
+    :`<button class="fbtn locked" type="button" data-shop="1" aria-label="${a.name}, 상점에서 도토리 ${a.price}개"><img src="${charSrc(i)}" alt=""><span>${ACORN_SVG} ${a.price}</span></button>`).join('')+
     `<button class="fbtn" type="button" data-f="rand" aria-pressed="${cur==='rand'}"><span class="dice" aria-hidden="true">?</span><span>판마다 무작위</span></button>`;
 }
 function openFriend(){$('#friendGrid').innerHTML=friendButtonsHTML();open('sheetFriend')}
@@ -870,7 +954,36 @@ function chooseFriend(f,closeSheet){
 }
 // Korean particle 로/으로: no final consonant or a final ㄹ takes 로
 function withRo(w){const c=w.charCodeAt(w.length-1)-0xAC00;const j=c>=0&&c<11172?c%28:0;return w+(j===0||j===8?'로':'으로')}
-$('#friendGrid').addEventListener('click',e=>{const b=e.target.closest('.fbtn');if(b)chooseFriend(b.dataset.f,true)});
+$('#friendGrid').addEventListener('click',e=>{const b=e.target.closest('.fbtn');if(!b)return;if(b.dataset.shop){openShop();return}chooseFriend(b.dataset.f,true)});
+
+/* ---------- acorn shop ---------- */
+const ACORN_SVG='<svg class="acorn" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4.2V2.2" stroke="#6B4420" stroke-width="1.8" stroke-linecap="round" fill="none"/><path d="M6.3 10.2h11.4c0 6-2.9 10.6-5.7 10.6S6.3 16.2 6.3 10.2z" fill="#C98A4B"/><path d="M4.6 10.4c0-3.6 3.3-6.2 7.4-6.2s7.4 2.6 7.4 6.2z" fill="#7A4A22"/></svg>';
+const HINT_PACKS=[{id:'h1',hints:1,price:80},{id:'h3',hints:3,price:200}];
+const acorns=()=>Math.max(0,prog.acorns|0);
+function updateAcorns(){$('#acornChip').innerHTML=`${ACORN_SVG}<span class="num">${acorns()}</span>`;$('#acornChip').setAttribute('aria-label',`도토리 ${acorns()}개, 상점 열기`)}
+function openShop(){renderShop();open('sheetShop')}
+function renderShop(){
+  $('#shopAcorns').textContent=acorns();$('.purse-ic').innerHTML=ACORN_SVG;
+  $('#shopFriends').innerHTML=range(ANIMALS.length).filter(i=>i>=BASE_FRIENDS).map(i=>{const a=ANIMALS[i],have=owns(i),cur=String(settings.friend)===String(i);
+    return `<div class="item${have?' have':''}"><img src="${charSrc(i)}" alt=""><b>${a.name}</b>`+
+      (have?`<button class="buy" type="button" data-pick="${i}" ${cur?'aria-pressed="true"':''}>${cur?'함께하는 중':'데려오기'}</button>`
+           :`<button class="buy" type="button" data-buy="f${i}">${ACORN_SVG} ${a.price}</button>`)+`</div>`}).join('');
+  $('#shopHints').innerHTML=HINT_PACKS.map(p=>`<div class="item"><span class="hint-ic" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-3.8 11.8V16h7.6v-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg>×${p.hints}</span><b>힌트 ${p.hints}개</b><button class="buy" type="button" data-buy="${p.id}">${ACORN_SVG} ${p.price}</button></div>`).join('');
+  $('#shopHintsLeft').textContent=`지금 힌트 ${hintsLeft()}개`;
+}
+let shopArm=null,shopArmT=null;
+$('#sheetShop').addEventListener('click',e=>{
+  const pick=e.target.closest('[data-pick]');if(pick){chooseFriend(pick.dataset.pick,false);renderShop();return}
+  const b=e.target.closest('[data-buy]');if(!b)return;const id=b.dataset.buy;
+  const friend=id[0]==='f'?+id.slice(1):null,pack=HINT_PACKS.find(p=>p.id===id),price=friend!=null?ANIMALS[friend].price:pack.price;
+  if(acorns()<price){toast(`도토리가 ${price-acorns()}개 더 필요해요. 판을 깨면 얻은 점수만큼 도토리가 쌓여요.`);return}
+  if(shopArm!==id){shopArm=id;clearTimeout(shopArmT);renderShop();const nb=$(`#sheetShop [data-buy="${id}"]`);if(nb){nb.classList.add('armed');nb.textContent='한 번 더 누르면 구매'}
+    shopArmT=setTimeout(()=>{shopArm=null;if(!$('#sheetShop').hidden)renderShop()},3000);return}
+  shopArm=null;clearTimeout(shopArmT);prog.acorns=acorns()-price;
+  if(friend!=null){prog.owned=(prog.owned||[]).concat([friend]);toast(`${ANIMALS[friend].name}${(ANIMALS[friend].name.charCodeAt(ANIMALS[friend].name.length-1)-0xAC00)%28?'이':'가'} 숲에 왔어요! 친구 고르기에서 함께할 수 있어요.`)}
+  else{prog.hintsLeft=hintsLeft()+pack.hints;toast(`힌트 ${pack.hints}개를 샀어요. 이제 ${hintsLeft()}개예요.`)}
+  saveProg();Snd.sfx('win');renderShop();updateAcorns();updateHintCount();if(onIntro())renderIntro();
+});
 function skipTutorial(){prog.tutorialDone=true;saveProg();startNew(settings.size||6,settings.friend,false);toast('튜토리얼을 건너뛰었어요. 처음 화면에서 언제든 다시 할 수 있어요.')}
 
 /* ---------- rule examples (small drawings) ---------- */
@@ -900,7 +1013,7 @@ function renderRules(el,src){el.innerHTML=RULES.map((t,k)=>`<div class="rule-car
 /* ---------- intro screen ---------- */
 let introDemo=null;
 function renderIntro(){
-  $('#introPeek').innerHTML=ANIMALS.map((a,i)=>`<img src="${charSrc(i)}" alt="" style="animation-delay:${(i*.18).toFixed(2)}s">`).join('');
+  $('#introPeek').innerHTML=ownedFriends().map((i,k)=>`<img src="${charSrc(i)}" alt="" style="animation-delay:${(k*.18).toFixed(2)}s">`).join('');
   if(!introDemo)introDemo=Puz.generate(5,20261118);
   if(introDemo){
     const d=introDemo,n=5,dm=colorMap(d.reg,n);let h='';
@@ -910,7 +1023,7 @@ function renderIntro(){
     $('#introBoard').innerHTML=h;
   }
   const L=levelOf(prog.xp),s=streakNow();
-  $('#introStats').innerHTML=`<span class="chip num">Lv.${L.level}</span><span class="chip num">완성 ${prog.cleared}판</span><span class="chip num">힌트 ${hintsLeft()}개</span>`+(s?`<span class="chip num">연속 ${s}일</span>`:'');
+  $('#introStats').innerHTML=`<span class="chip num">Lv.${L.level}</span><span class="chip num">완성 ${prog.cleared}판</span><span class="chip num">힌트 ${hintsLeft()}개</span><span class="chip num">${ACORN_SVG} ${acorns()}</span>`+(s?`<span class="chip num">연속 ${s}일</span>`:'');
   const inProg=G&&!G.done&&!G.over&&(G.elapsed>0||G.st.some(x=>x));
   $('#introPlay').innerHTML=(inTut()&&!G.done)?`튜토리얼 이어하기<small>${G.tut+1} / ${TUT.length}단계</small>`:
     !prog.tutorialDone?'튜토리얼로 시작하기<small>처음 4판은 차근차근 배우는 연습판이에요</small>':
@@ -925,7 +1038,7 @@ const onIntro=()=>!$('#intro').hidden;
 function restart(){
   if(!G)return;closeAll();
   if(inTut()){startTutorial(G.tut);return}
-  Object.assign(G,{st:new Array(G.n*G.n).fill(0),miss:0,hints:0,hinted:[],elapsed:0,done:false,over:false,undo:[],bonus:0,cleared:null});
+  Object.assign(G,{st:new Array(G.n*G.n).fill(0),miss:0,hints:0,hinted:[],elapsed:0,done:false,over:false,undo:[],bonus:0,cleared:null,taint:[]});
   busy=false;after();
 }
 function buildBoard(){
@@ -980,7 +1093,7 @@ function updateStatus(){
   else{const left=Math.max(0,3-G.miss);h.innerHTML=[0,1,2].map(k=>`<svg viewBox="0 0 24 24" class="${k<left?'':'lost'}" aria-hidden="true">${HEART}</svg>`).join('');h.setAttribute('aria-label','남은 하트 '+left)}
 }
 function updateHeader(){
-  updateHintCount();
+  updateHintCount();updateAcorns();
   const L=levelOf(prog.xp);
   $('#lvtxt').textContent='Lv.'+L.level;$('#lvmini').style.width=Math.round(L.cur/L.span*100)+'%';
   const s=streakNow(),sc=$('#streak');sc.hidden=!s;sc.textContent='연속 '+s+'일';
@@ -1024,15 +1137,16 @@ function toggleFriend(i){
 }
 function placeFriend(i){
   const n=G.n,r=(i/n)|0,c=i%n,right=G.sol[r]===c;
-  const tier=right?reasonTier(i):0; // judged on the board as it was before this move
+  const tier=(right&&!tainted(i))?reasonTier(i):0; // judged on the board as it was before this move
   G.st[i]=2;
   if(right){
-    if(settings.autoX)autoX(i);
-    if(tier){G.bonus=(G.bonus||0)+TIER_PTS[tier];if(tier<3&&!inTut()){prog.smart=(prog.smart||0)+1;saveProg()}}
-    Snd.sfx(['pop','smart','genius','bold'][tier]);after();
+    if(settings.autoX){autoX(i);noBonusOnce=true}
+    if(tier){G.bonus=(G.bonus||0)+TIER_PTS[tier];if(!inTut()){prog.smart=(prog.smart||0)+1;saveProg()}}
+    Snd.sfx(['pop','smart','genius'][tier]);after();
     if(tier)smartFX(i,tier);else ripple(i);
     checkDone();return;
   }
+  G.taint=G.taint||[];['r'+r,'c'+c,'g'+G.reg[i]].forEach(k=>{if(G.taint.indexOf(k)<0)G.taint.push(k)});
   G.miss++;busy=true;Snd.sfx('err');render();updateStatus();
   const el=cells[i];el.classList.add('bad');
   setTimeout(()=>{el.classList.remove('bad');G.st[i]=1;busy=false;after();if(!settings.relax&&!inTut()&&G.miss>=3)gameOver()},700);
@@ -1131,6 +1245,7 @@ function clearHint(){
 }
 function applyHint(){
   const h=curHint;if(!h||locked())return;clearHint();pushUndo();
+  noBonusOnce=true; // anything a hint completes earns no completion points
   if(h.kind==='place'||h.kind==='reveal'){
     const i=h.apply[0];G.st[i]=2;if(h.kind==='reveal')G.hinted.push(i);if(settings.autoX)autoX(i);
     Snd.sfx('pop');after();ripple(i);checkDone();
@@ -1149,31 +1264,29 @@ const shortName=u=>u.t==='r'?`${u.k+1}번째 가로줄`:u.t==='c'?`${u.k+1}번�
 // Tier of the reasoning needed to find `target` from what is on the board right before the move:
 // 0 = it was the only seat left somewhere, 1 = one round of eliminations, 2 = a chain of them,
 // 3 = not reachable with these rules (correct, but possibly a lucky pick).
+// Judged only from what the rules say about the friends already seated (the player's own × marks are
+// notes and are not trusted, and the answer is never peeked at):
+// 0 = it was already the only seat left somewhere, 1 = one round of basic reasoning,
+// 2 = needs the harder "would block a unit" rule or two rounds. Longer chains get no bonus,
+// because a correct pick that far ahead is just as likely a lucky guess.
 function reasonTier(target){
-  const n=G.n,N=n*n,reg=G.reg,rc=i=>[(i/n)|0,i%n],isSol=i=>G.sol[(i/n)|0]===i%n;
+  const n=G.n,N=n*n,reg=G.reg,rc=i=>[(i/n)|0,i%n];
   const sees=(a,b)=>{if(a===b)return false;const [r1,c1]=rc(a),[r2,c2]=rc(b);return r1===r2||c1===c2||reg[a]===reg[b]||(Math.abs(r1-r2)<=1&&Math.abs(c1-c2)<=1)};
-  const vf=G.st.map(s=>s===2);
-  const cand=G.st.map((s,i)=>!vf[i]&&(s===0||(s===1&&isSol(i))));
+  const vf=G.st.map(s=>s===2),cand=vf.map(v=>!v);
   for(let f=0;f<N;f++)if(vf[f])for(let j=0;j<N;j++)if(cand[j]&&sees(f,j))cand[j]=false;
-  const units=buildUnits(n,reg),open=u=>!u.cells.some(i=>vf[i]);
-  const single=()=>units.some(u=>open(u)&&u.cells.indexOf(target)>=0&&u.cells.every(i=>i===target||!cand[i]));
-  for(let round=0;round<14;round++){
-    if(single())return round===0?0:round===1?1:2;
-    let changed=false;
-    for(const u of units){if(!open(u))continue;const s=u.cells.filter(i=>cand[i]);
-      if(s.length===1&&s[0]!==target){const y=s[0];vf[y]=true;cand[y]=false;for(let j=0;j<N;j++)if(cand[j]&&sees(y,j))cand[j]=false;changed=true}}
-    for(const u of units){if(!open(u))continue;const s=u.cells.filter(i=>cand[i]);if(s.length<2)continue;
-      for(const t of ['r','c','g']){if(t===u.t)continue;const key=i=>t==='r'?rc(i)[0]:t==='c'?rc(i)[1]:reg[i],k0=key(s[0]);
-        if(!s.every(i=>key(i)===k0))continue;const v=units.find(w=>w.t===t&&w.k===k0);
-        for(const j of v.cells)if(cand[j]&&u.cells.indexOf(j)<0){cand[j]=false;changed=true}}}
-    for(let x=0;x<N;x++){if(!cand[x])continue;
-      for(const u of units){if(!open(u)||u.cells.indexOf(x)>=0)continue;const s=u.cells.filter(i=>cand[i]);
-        if(s.length&&s.every(i=>sees(x,i))){cand[x]=false;changed=true;break}}}
-    if(!changed)break;
-  }
-  return single()?2:3;
+  const units=buildUnits(n,reg);
+  const reached=(v,c)=>v[target]||units.some(u=>!u.cells.some(i=>v[i])&&u.cells.indexOf(target)>=0&&u.cells.every(i=>i===target||!c[i]));
+  if(reached(vf,cand))return 0;
+  const v1=vf.slice(),c1=cand.slice();logicRound(n,reg,v1,c1,units,false);
+  if(reached(v1,c1))return 1;
+  logicRound(n,reg,vf,cand,units,true);if(reached(vf,cand))return 2;
+  logicRound(n,reg,vf,cand,units,true);if(reached(vf,cand))return 2;
+  return 0;
 }
-const TIER_PTS=[0,5,10,3],TIER_LABEL=['','좋은 추리!','명탐정 추리!','대담한 한 수!'];
+const TIER_PTS=[0,5,10],TIER_LABEL=['','좋은 추리!','명탐정 추리!'];
+// a row, column or region where the player already guessed wrong gives no reasoning bonus
+const tainted=i=>{const n=G.n,t=G.taint||[];return t.indexOf('r'+((i/n)|0))>=0||t.indexOf('c'+(i%n))>=0||t.indexOf('g'+G.reg[i])>=0};
+let noBonusOnce=false;
 
 /* ---------- effects layer (sparks, floating labels, sweeps) ---------- */
 function cellCenter(i){const w=$('.board-wrap').getBoundingClientRect(),b=cells[i].getBoundingClientRect();return [b.left+b.width/2-w.left,b.top+b.height/2-w.top]}
@@ -1194,29 +1307,34 @@ function burst(i,count,dist){
     wrap.appendChild(s);setTimeout(()=>s.remove(),800)}
 }
 function smartFX(i,tier){
-  const pts=TIER_PTS[tier];floatMsg([i],`${TIER_LABEL[tier]} +${pts}`,tier!==3);
-  if(tier===3){burst(i,5,22);return}
+  const pts=TIER_PTS[tier];floatMsg([i],`${TIER_LABEL[tier]} +${pts}`,true);
   burst(i,tier===2?14:8,tier===2?34:26);ripple(i);
   if(tier===2&&!reduceMotion()){const b=$('#board');b.classList.remove('genius');void b.offsetWidth;b.classList.add('genius');setTimeout(()=>b.classList.remove('genius'),900)}
 }
 // a row, column or region counts as finished once its friend sits there and every other cell carries ×
+// done = exactly one friend (the right one) and every other cell marked ×.
+// Points only when the player drew those × themselves (not the auto-× helper, not a hint).
 function unitCheck(){
-  if(!G||G.done)return;const n=G.n,isSol=i=>G.sol[(i/n)|0]===i%n;
-  const units=buildUnits(n,G.reg),done=u=>u.cells.some(i=>G.st[i]===2&&isSol(i))&&u.cells.every(i=>G.st[i]!==0);
-  if(!G.cleared){G.cleared=units.filter(done).map(u=>u.t+u.k);return}
-  if(range(n).every(r=>G.st[r*n+G.sol[r]]===2))return; // the winning move gets its own celebration
-  const fresh=units.filter(u=>G.cleared.indexOf(u.t+u.k)<0&&done(u));if(!fresh.length)return;
+  if(!G||G.done){noBonusOnce=false;return}const n=G.n,isSol=i=>G.sol[(i/n)|0]===i%n;
+  const units=buildUnits(n,G.reg);
+  const done=u=>{let f=0;for(const i of u.cells){if(G.st[i]===2){if(!isSol(i))return false;f++}else if(G.st[i]!==1)return false}return f===1};
+  if(!G.cleared){G.cleared=units.filter(done).map(u=>u.t+u.k);noBonusOnce=false;return}
+  const fresh=units.filter(u=>G.cleared.indexOf(u.t+u.k)<0&&done(u));
+  const give=!settings.autoX&&!noBonusOnce;noBonusOnce=false;
+  if(!fresh.length)return;
   fresh.forEach(u=>G.cleared.push(u.t+u.k));
-  const pts=fresh.length===1?2:fresh.length*3;G.bonus=(G.bonus||0)+pts;
+  const pts=give?(fresh.length===1?2:fresh.length*3):0;G.bonus=(G.bonus||0)+pts;
   fresh.forEach(u=>sweep(u.cells));
-  floatMsg(fresh.length===1?fresh[0].cells:[].concat(...fresh.map(u=>u.cells)),fresh.length===1?`${shortName(fresh[0])} 완성! +${pts}`:`${fresh.length}곳 동시 완성! +${pts}`,false);
+  const what=fresh.length===1?`${shortName(fresh[0])} 완성!`:`${fresh.length}곳 동시 완성!`;
+  floatMsg(fresh.length===1?fresh[0].cells:[].concat(...fresh.map(u=>u.cells)),pts?`${what} +${pts}`:what,false);
   Snd.sfx('line',fresh.length);
 }
-window.TodakDebug={analyze,reasonTier,colorMap,PAL_D,get G(){return G}}; // for self-checks in the console
+window.TodakDebug={analyze,reasonTier,colorMap,PAL_D,logicRounds,get G(){return G}}; // for self-checks in the console
 function checkDone(){const n=G.n;if(range(n).every(r=>G.st[r*n+G.sol[r]]===2))finish()}
 function gameOver(){G.over=true;saveGame();Snd.sfx('over');$('#overPic').src=charSrc(G.friend);open('sheetOver')}
 
 function finish(){
+  if(!G||G.done)return; // never pay out twice
   G.done=true;
   if(inTut()){tutFinish();return}
   const n=G.n,pen=G.miss+G.hints,stars=pen===0?3:pen===1?2:1,dk=dayKey();
@@ -1228,6 +1346,7 @@ function finish(){
   if(prog.last!==dk){prog.streak=(prog.last===yesterdayKey())?prog.streak+1:1;prog.last=dk}
   prog.best=Math.max(prog.best||0,prog.streak);
   prog.xp+=xp;prog.cleared++;if(pen===0)prog.perfect++;
+  prog.acorns=acorns()+xp; // every point earned on the board also becomes an acorn for the shop
   const hintGain=grantLevelHints(before);
   const st=prog.stats[n]||{n:0,best:null};st.n++;
   const record=st.best!==null&&G.elapsed<st.best;if(st.best===null||G.elapsed<st.best)st.best=G.elapsed;prog.stats[n]=st;
@@ -1246,6 +1365,7 @@ function showWin(r){
   $('#wTime').textContent=fmt(G.elapsed);$('#wMiss').textContent=G.miss;$('#wHint').textContent=G.hints;
   $('#wXp').textContent='+'+r.xp+(r.dailyBonus?' (오늘의 보너스 포함)':'');
   $('#wBonus').hidden=!r.bonus;$('#wBonus').textContent=`그중 추리·완성 보너스 +${r.bonus}`;
+  $('#wAcorn').innerHTML=`${ACORN_SVG} 도토리 +${r.xp} · 모두 ${acorns()}개`;
   const L=levelOf(prog.xp);$('#wLv').textContent=`레벨 ${L.level} · 다음 레벨까지 ${L.span-L.cur}`;
   $('#wBar').style.width='0';
   $('#wLvUp').hidden=!r.levelUp;$('#wLvUp').textContent=`레벨 ${L.level} 달성!`+(r.hintGain?` 힌트 +${r.hintGain}개를 받았어요 (남은 힌트 ${hintsLeft()}개)`:'');
@@ -1357,6 +1477,8 @@ $('#introPlay').addEventListener('click',()=>{
 });
 $('#introTut').addEventListener('click',()=>startTutorial(0));
 $('#introFriend').addEventListener('click',openFriend);
+$('#introShop').addEventListener('click',openShop);
+$('#acornChip').addEventListener('click',openShop);
 $('#mode').addEventListener('click',openFriend);
 $('#coachSkip').addEventListener('click',skipTutorial);
 $('#tutNext').addEventListener('click',()=>{const k=G?G.tut:0;if(k!=null&&k<TUT.length-1)startTutorial(k+1);else startNew(settings.size||6,settings.friend,false)});
