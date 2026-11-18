@@ -1,5 +1,5 @@
-// 토닥 숲자리 service worker — version 52d6965533
-const SHELL='todak-shell-52d6965533', RUNTIME='todak-runtime';
+// 토닥 숲자리 service worker — version 3354e7915f
+const SHELL='todak-shell-3354e7915f', RUNTIME='todak-runtime';
 const FILES=['./','./index.html','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/maskable-512.png','./icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(SHELL).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==SHELL&&k!==RUNTIME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

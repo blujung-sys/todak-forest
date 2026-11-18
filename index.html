@@ -167,6 +167,10 @@ svg.acorn{width:16px;height:16px;vertical-align:-3px;flex:none}
 .coach p b{font-weight:700}
 .cell.target,.cell.hl-apply{animation:glow 1.1s ease-in-out infinite}
 .cell.hl-focus::before{content:"";position:absolute;inset:0;background:var(--x-fill);opacity:.38;pointer-events:none}
+/* shown under the board once a game is over or finished, so there is always a way forward */
+.endbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}
+.endbar span{width:100%;text-align:center;font-family:var(--font-display);font-size:18px}
+.endbar button{width:auto;min-width:130px;padding:11px 16px}
 /* hint button + popup */
 .tools{display:flex;justify-content:center}
 .hintbtn{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:10px 18px 10px 16px;cursor:pointer;font-family:var(--font-display);font-size:18px}
@@ -362,7 +366,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <div class="loading" id="loading" hidden>판을 만드는 중…</div>
   </div>
 
-  <div class="tools">
+  <div class="endbar" id="endBar" hidden>
+    <span id="endText">하트를 모두 썼어요</span>
+    <button class="secondary" id="endRetry" type="button">이 판 다시</button>
+    <button class="primary" id="endNew" type="button">새 판</button>
+  </div>
+  <div class="tools" id="toolsRow">
     <button class="hintbtn" id="tHint" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 21.5h4"/><path d="M12 2.5a6.5 6.5 0 0 0-3.8 11.8V16h7.6v-1.7A6.5 6.5 0 0 0 12 2.5z"/></svg>힌트 <span class="count num" id="hintCount">3</span></button>
   </div>
   <p class="hint-line">터치하거나 끌면 ×, 두 번 빠르게 누르면 친구가 앉아요. 앉은 친구를 두 번 누르면 비켜나요.</p>
@@ -1083,8 +1092,14 @@ function render(){
   });
 }
 const HEART='<path d="M12 20.5s-7.5-4.6-9.3-9.2C1.4 7.9 3.6 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8-1.8 4.6-9.3 9.2-9.3 9.2z"/>';
+function updateEndBar(){
+  const over=!!(G&&G.over),done=!!(G&&G.done);
+  $('#endBar').hidden=!(over||done);$('#toolsRow').hidden=over||done;$('.hint-line').hidden=over||done;
+  if(over){$('#endText').textContent='하트를 모두 썼어요';$('#endRetry').hidden=false;$('#endNew').textContent='새 판'}
+  else if(done){$('#endText').textContent='완성한 판이에요';$('#endRetry').hidden=true;$('#endNew').textContent=(G.daily||inTut())?'새 판 고르기':'다음 판'}
+}
 function updateStatus(){
-  updateHintCount();
+  updateHintCount();updateEndBar();
   $('#mode').innerHTML=`<img src="${charSrc(G.friend)}" alt="">`+(G.daily?'오늘의 판 · ':'')+`<b>${G.n}×${G.n}</b>`;
   $('#timer').textContent=G.done?'완성 '+fmt(G.elapsed):fmt(G.elapsed);
   const h=$('#hearts');
@@ -1331,7 +1346,7 @@ function unitCheck(){
 }
 window.TodakDebug={analyze,reasonTier,colorMap,PAL_D,logicRounds,get G(){return G}}; // for self-checks in the console
 function checkDone(){const n=G.n;if(range(n).every(r=>G.st[r*n+G.sol[r]]===2))finish()}
-function gameOver(){G.over=true;saveGame();Snd.sfx('over');$('#overPic').src=charSrc(G.friend);open('sheetOver')}
+function gameOver(){G.over=true;saveGame();updateStatus();Snd.sfx('over');$('#overPic').src=charSrc(G.friend);open('sheetOver')}
 
 function finish(){
   if(!G||G.done)return; // never pay out twice
@@ -1437,6 +1452,7 @@ let drag=null;
 const board=$('#board');
 const cellAt=(x,y)=>{const t=document.elementFromPoint(x,y);return t&&t.closest?t.closest('.cell'):null};
 board.addEventListener('pointerdown',e=>{
+  if(G&&G.over&&!anyOpen()){open('sheetOver');return} // a locked board brings the choices back
   if(locked())return;const el=e.target.closest('.cell');if(!el)return;
   if(e.pointerType==='mouse'&&e.button!==0)return;
   drag={id:e.pointerId,start:+el.dataset.i,last:+el.dataset.i,moved:false,paint:null};
@@ -1489,6 +1505,8 @@ $('#introSet').addEventListener('click',openSet);
 $('#winNext').addEventListener('click',()=>{if(G&&G.daily)openNew();else if(G)startNew(G.n,settings.friend,false)});
 $('#winClose').addEventListener('click',closeAll);
 $('#overRetry').addEventListener('click',restart);
+$('#endRetry').addEventListener('click',restart);
+$('#endNew').addEventListener('click',()=>{if(G&&G.done&&!G.daily&&!inTut())startNew(G.n,settings.friend,false);else openNew()});
 $('#overNew').addEventListener('click',openNew);
 $('#btnMusic').addEventListener('click',()=>{
   settings.music=!settings.music;saveSettings();updateHeader();
