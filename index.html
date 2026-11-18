@@ -31,7 +31,8 @@ img{max-width:100%}
   --grid:rgba(30,50,40,.16); --line-strong:#2E4A3B; --accent:#E0952A; --accent-soft:#FBE5C0;
   --error:#CF4038; --ok:#2E8B57; --heart:#E0565B; --scrim:rgba(14,28,20,.45); --line:#BCCDC1;
   --shadow:0 8px 24px rgba(30,50,40,.14); --x-fill:#FFFFFF; --x-edge:#3A5446; --cell-line:#FFFFFF;
-  --r0:#F6CACA; --r1:#F8DCB0; --r2:#F3EAA6; --r3:#CDE7B6; --r4:#B7E1D4; --r5:#BBD8F0; --r6:#CCC6EE; --r7:#EAC5E2; --r8:#DDD0BA; --r9:#C8D3DA;
+  /* region colours: ten clearly different hues, spread in lightness too */
+  --r0:#F29C9C; --r1:#F6B26B; --r2:#F0DC5A; --r3:#9CD67A; --r4:#6FCFBF; --r5:#7FB8F0; --r6:#A79BF0; --r7:#E290D6; --r8:#C9A27A; --r9:#B5C0C8;
   --font-display:"Jua","Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
   --font-body:"Gowun Dodum","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
 }
@@ -40,7 +41,7 @@ img{max-width:100%}
   --grid:rgba(227,237,230,.14); --line-strong:#A8C3B2; --accent:#F2B24C; --accent-soft:#4A3A1C;
   --error:#FF7A6E; --ok:#62D194; --heart:#FF7C80; --scrim:rgba(0,0,0,.6); --line:#3A4D43;
   --shadow:0 8px 24px rgba(0,0,0,.45); --x-fill:#FFFFFF; --x-edge:#0B120E; --cell-line:#ECF2EE;
-  --r0:#5C3B3E; --r1:#5D4729; --r2:#56512B; --r3:#3F5334; --r4:#2F534A; --r5:#2F4B61; --r6:#454160; --r7:#584055; --r8:#504737; --r9:#404B51;
+  --r0:#8A3F42; --r1:#8F5B24; --r2:#857A22; --r3:#3F7A33; --r4:#1F7468; --r5:#2C5E8E; --r6:#5A4C9C; --r7:#874480; --r8:#6E5640; --r9:#55616A;
   color-scheme:dark;
 }}
 :root[data-theme="dark"]{
@@ -48,7 +49,7 @@ img{max-width:100%}
   --grid:rgba(227,237,230,.14); --line-strong:#A8C3B2; --accent:#F2B24C; --accent-soft:#4A3A1C;
   --error:#FF7A6E; --ok:#62D194; --heart:#FF7C80; --scrim:rgba(0,0,0,.6); --line:#3A4D43;
   --shadow:0 8px 24px rgba(0,0,0,.45); --x-fill:#FFFFFF; --x-edge:#0B120E; --cell-line:#ECF2EE;
-  --r0:#5C3B3E; --r1:#5D4729; --r2:#56512B; --r3:#3F5334; --r4:#2F534A; --r5:#2F4B61; --r6:#454160; --r7:#584055; --r8:#504737; --r9:#404B51;
+  --r0:#8A3F42; --r1:#8F5B24; --r2:#857A22; --r3:#3F7A33; --r4:#1F7468; --r5:#2C5E8E; --r6:#5A4C9C; --r7:#874480; --r8:#6E5640; --r9:#55616A;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -605,6 +606,45 @@ const Puz={
   }
 };
 /*GEN-END*/
+
+/* ---------- region colouring: neighbouring regions get the most different colours ---------- */
+const PAL=['#F29C9C','#F6B26B','#F0DC5A','#9CD67A','#6FCFBF','#7FB8F0','#A79BF0','#E290D6','#C9A27A','#B5C0C8'];
+function hexLab(h){
+  const f=c=>c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4);
+  const r=f(parseInt(h.slice(1,3),16)/255),g=f(parseInt(h.slice(3,5),16)/255),b=f(parseInt(h.slice(5,7),16)/255);
+  const t=v=>v>.008856?Math.cbrt(v):7.787*v+16/116;
+  const X=t((r*.4124+g*.3576+b*.1805)/.95047),Y=t(r*.2126+g*.7152+b*.0722),Z=t((r*.0193+g*.1192+b*.9505)/1.08883);
+  return [116*Y-16,500*(X-Y),200*(Y-Z)];
+}
+const PAL_D=(()=>{const L=PAL.map(hexLab);return L.map(a=>L.map(b=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])))})();
+// Returns colour index for each region: maximise the smallest colour difference between touching regions.
+function colorMap(reg,n){
+  const adj=Array.from({length:n},()=>new Set());
+  for(let i=0;i<n*n;i++){const r=(i/n)|0,c=i%n;
+    if(c<n-1&&reg[i]!==reg[i+1]){adj[reg[i]].add(reg[i+1]);adj[reg[i+1]].add(reg[i])}
+    if(r<n-1&&reg[i]!==reg[i+n]){adj[reg[i]].add(reg[i+n]);adj[reg[i+n]].add(reg[i])}}
+  const score=m=>{let mn=1e9,sum=0;for(let g=0;g<n;g++)for(const h of adj[g])if(h>g){const d=PAL_D[m[g]][m[h]];if(d<mn)mn=d;sum+=d}return mn*1000+sum};
+  const rng=mulberry32(hashStr(reg.join(',')));
+  // greedy start: busiest regions first, each takes the free colour farthest from its coloured neighbours
+  const m=new Array(n).fill(-1),used=new Set();
+  for(const g of range(n).sort((a,b)=>adj[b].size-adj[a].size)){
+    let best=-1,bv=-1;
+    for(let c=0;c<PAL.length;c++){if(used.has(c))continue;let mn=1e9,sum=0;
+      for(const h of adj[g])if(m[h]>=0){mn=Math.min(mn,PAL_D[c][m[h]]);sum+=PAL_D[c][m[h]]}
+      const v=(mn===1e9?500:mn)*1000+sum;if(v>bv){bv=v;best=c}}
+    m[g]=best;used.add(best);
+  }
+  // improve by swapping two regions' colours or trying an unused colour
+  let cur=score(m);
+  for(let it=0;it<600;it++){
+    const a=Math.floor(rng()*n),free=range(PAL.length).filter(c=>!used.has(c));
+    if(free.length&&rng()<.35){const c=free[Math.floor(rng()*free.length)],old=m[a];m[a]=c;const s=score(m);
+      if(s>cur){cur=s;used.delete(old);used.add(c)}else m[a]=old}
+    else{const b=Math.floor(rng()*n);if(a===b)continue;[m[a],m[b]]=[m[b],m[a]];const s=score(m);if(s>cur)cur=s;else[m[a],m[b]]=[m[b],m[a]]}
+  }
+  return m;
+}
+let cmap=null; // colour index per region for the current board
 window.TodakPuzzle=Puz; // for self-checks in the console
 
 /* ---------- audio: soft generated piano ---------- */
@@ -862,10 +902,10 @@ function renderIntro(){
   $('#introPeek').innerHTML=ANIMALS.map((a,i)=>`<img src="${charSrc(i)}" alt="" style="animation-delay:${(i*.18).toFixed(2)}s">`).join('');
   if(!introDemo)introDemo=Puz.generate(5,20261118);
   if(introDemo){
-    const d=introDemo,n=5;let h='';
+    const d=introDemo,n=5,dm=colorMap(d.reg,n);let h='';
     for(let i=0;i<n*n;i++){const r=(i/n)|0,c=i%n;
       const cls=[(c<n-1&&d.reg[i]!==d.reg[i+1])?'rb':'',(r<n-1&&d.reg[i]!==d.reg[i+n])?'bb':'',c===n-1?'lc':'',r===n-1?'lr':''].join(' ').trim();
-      h+=`<i class="${cls}" style="background:var(--r${d.reg[i]})">${d.sol[r]===c?`<img src="${charSrc((r*3+2)%10)}" alt="" style="animation-delay:${(r*.35).toFixed(2)}s">`:''}</i>`}
+      h+=`<i class="${cls}" style="background:var(--r${dm[d.reg[i]]})">${d.sol[r]===c?`<img src="${charSrc((r*3+2)%10)}" alt="" style="animation-delay:${(r*.35).toFixed(2)}s">`:''}</i>`}
     $('#introBoard').innerHTML=h;
   }
   const L=levelOf(prog.xp),s=streakNow();
@@ -890,10 +930,11 @@ function restart(){
 function buildBoard(){
   const n=G.n,board=$('#board');
   board.style.setProperty('--n',n);board.innerHTML='';
+  cmap=colorMap(G.reg,n);
   for(let i=0;i<n*n;i++){
     const r=(i/n)|0,c=i%n,el=document.createElement('button');
     el.type='button';el.className='cell';el.dataset.i=i;el.setAttribute('role','gridcell');
-    el.style.background=`var(--r${G.reg[i]})`;
+    el.style.background=`var(--r${cmap[G.reg[i]]})`;
     if(c<n-1&&G.reg[i]!==G.reg[i+1])el.classList.add('rb');
     if(r<n-1&&G.reg[i]!==G.reg[i+n])el.classList.add('bb');
     if(c===n-1)el.classList.add('lc');if(r===n-1)el.classList.add('lr');
@@ -1005,8 +1046,9 @@ function askRestart(){
   armT=setTimeout(()=>{b.classList.remove('armed');b.textContent='이 판 처음부터 다시 하기'},3000);
 }
 /* ---------- logical hints: find the simplest next deduction and explain it ---------- */
-const COLOR_NAMES=['분홍','살구','노랑','연두','민트','하늘','보라','자주','모래','회색'];
-const unitName=u=>u.t==='r'?`위에서 ${u.k+1}번째 가로줄`:u.t==='c'?`왼쪽에서 ${u.k+1}번째 세로줄`:`${COLOR_NAMES[u.k]} 구역`;
+const COLOR_NAMES=['빨강','주황','노랑','초록','청록','하늘','보라','분홍','갈색','회색'];
+const regionColorName=g=>COLOR_NAMES[cmap?cmap[g]:g];
+const unitName=u=>u.t==='r'?`위에서 ${u.k+1}번째 가로줄`:u.t==='c'?`왼쪽에서 ${u.k+1}번째 세로줄`:`${regionColorName(u.k)} 구역`;
 function analyze(){
   const n=G.n,N=n*n,st=G.st,reg=G.reg,rc=i=>[(i/n)|0,i%n];
   const friends=range(N).filter(i=>st[i]===2);
@@ -1102,7 +1144,7 @@ function buildUnits(n,reg){
   for(let g=0;g<n;g++)u.push({t:'g',k:g,cells:range(n*n).filter(i=>reg[i]===g)});
   return u;
 }
-const shortName=u=>u.t==='r'?`${u.k+1}번째 가로줄`:u.t==='c'?`${u.k+1}번째 세로줄`:`${COLOR_NAMES[u.k]} 구역`;
+const shortName=u=>u.t==='r'?`${u.k+1}번째 가로줄`:u.t==='c'?`${u.k+1}번째 세로줄`:`${regionColorName(u.k)} 구역`;
 // Tier of the reasoning needed to find `target` from what is on the board right before the move:
 // 0 = it was the only seat left somewhere, 1 = one round of eliminations, 2 = a chain of them,
 // 3 = not reachable with these rules (correct, but possibly a lucky pick).
@@ -1169,7 +1211,7 @@ function unitCheck(){
   floatMsg(fresh.length===1?fresh[0].cells:[].concat(...fresh.map(u=>u.cells)),fresh.length===1?`${shortName(fresh[0])} 완성! +${pts}`:`${fresh.length}곳 동시 완성! +${pts}`,false);
   Snd.sfx('line',fresh.length);
 }
-window.TodakDebug={analyze,reasonTier,get G(){return G}}; // for self-checks in the console
+window.TodakDebug={analyze,reasonTier,colorMap,PAL_D,get G(){return G}}; // for self-checks in the console
 function checkDone(){const n=G.n;if(range(n).every(r=>G.st[r*n+G.sol[r]]===2))finish()}
 function gameOver(){G.over=true;saveGame();Snd.sfx('over');$('#overPic').src=charSrc(G.friend);open('sheetOver')}
 
